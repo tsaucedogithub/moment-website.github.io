@@ -33,14 +33,14 @@
 
       <h3>Information collected automatically:</h3>
       <ul>
-        <li><strong>Photos</strong> — Photos you capture during Moment sessions are stored on your device and synced to our servers so participants can view them in the shared feed. Photos are only visible to participants of that Moment.</li>
+        <li><strong>Photos</strong> — Photos you capture during Moment sessions are stored on your device and synced to our servers so they appear in the shared feed. Photos are visible to Moment participants and their friends within the app.</li>
         <li><strong>Location</strong> — If you grant location permission, we tag Moments with the location name and approximate coordinates where they were captured. Location is never shared beyond Moment participants. You can deny location permission and the app will function normally without it.</li>
       </ul>
 
       <h3>Information we do NOT collect:</h3>
       <ul>
         <li>We do not access your contacts or address book</li>
-        <li>We do not access your existing photo library (we only request permission to <em>save</em> composed photos to your camera roll)</li>
+        <li>We do not bulk-access your photo library. We only access individual photos you explicitly select (for example, choosing a profile photo).</li>
         <li>We do not collect browsing history, analytics, or advertising identifiers</li>
         <li>We do not use cookies or tracking pixels</li>
       </ul>
@@ -58,14 +58,14 @@
       <p>We use the following third-party services to operate the App:</p>
       <ul>
         <li><strong>Twilio</strong> — SMS delivery for phone verification codes. Twilio receives your phone number solely to deliver the verification SMS. See <a href="https://www.twilio.com/legal/privacy">Twilio's Privacy Policy</a>.</li>
-        <li><strong>Cloud storage provider</strong> — Photos are stored on cloud servers. Photos are only accessible to authenticated Moment participants.</li>
+        <li><strong>Cloud storage provider</strong> — Photos are stored on cloud servers with access limited to users of the app.</li>
       </ul>
       <p>We do not use any advertising networks, analytics SDKs, or tracking services.</p>
 
       <h2>4. Data Storage and Security</h2>
       <ul>
         <li>Your data is stored on secured servers with encrypted connections (HTTPS/TLS)</li>
-        <li>Photos are stored in cloud object storage with access restricted to Moment participants</li>
+        <li>Photos are stored in cloud object storage</li>
         <li>Authentication uses industry-standard JWT tokens</li>
         <li>Passwords are never collected — authentication is phone-number-based</li>
       </ul>
@@ -73,20 +73,19 @@
       <h2>5. Data Retention</h2>
       <ul>
         <li>Your account data is retained as long as your account is active</li>
-        <li>When you delete your account, all your data is permanently removed, including:
+        <li>When you delete your account, your data is removed from our systems, including:
           <ul>
             <li>Your user profile (display name, phone number, nickname, bio)</li>
-            <li>All Moments you hosted or participated in</li>
-            <li>All photos associated with those Moments</li>
-            <li>All friend connections</li>
+            <li>Photos you uploaded</li>
+            <li>Your friend connections</li>
           </ul>
         </li>
-        <li>Account deletion is immediate and irreversible</li>
+        <li>Shared Moments you participated in may remain visible to other participants. Storage cleanup may complete asynchronously.</li>
       </ul>
 
       <h2>6. Your Rights and Choices</h2>
       <ul>
-        <li><strong>Delete your account</strong>: You can delete your account at any time from Settings within the app. This permanently removes all your data from our servers.</li>
+        <li><strong>Delete your account</strong>: You can delete your account at any time from Settings within the app. This removes your profile and uploaded data from our systems.</li>
         <li><strong>Location permission</strong>: You can grant or revoke location access in your device settings at any time. The app works without location permission.</li>
         <li><strong>Data access</strong>: Contact us to request a copy of your data.</li>
       </ul>
