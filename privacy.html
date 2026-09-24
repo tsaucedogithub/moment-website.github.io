@@ -26,35 +26,38 @@
 
       <h3>Information you provide:</h3>
       <ul>
-        <li><strong>Phone number</strong> — Used solely for account verification via SMS. We do not use your phone number for marketing or share it with other users.</li>
-        <li><strong>Display name</strong> — Your chosen name visible to friends in the app.</li>
-        <li><strong>Profile information</strong> — Optional nickname, bio, and avatar color you set in your profile.</li>
+        <li><strong>Phone number</strong> — Used for account creation, SMS verification, authentication, and account security. We do not use your phone number for marketing or show it to other users.</li>
+        <li><strong>Display name</strong> — Your chosen name is visible to friends and people participating in nearby Moment discovery or sessions.</li>
+        <li><strong>Profile information</strong> — Optional nickname, bio, profile photo, and avatar color you set in your profile.</li>
       </ul>
 
-      <h3>Information collected automatically:</h3>
+      <p>We also store your comments, likes, friendships created in Moment, and reports you submit so the social and moderation features work.</p>
+
+      <h3>Information collected through use of the app:</h3>
       <ul>
         <li><strong>Photos</strong> — Photos you capture during Moment sessions are stored on your device and synced to our servers so they appear in the shared feed. Photos are visible to Moment participants and their friends within the app.</li>
         <li><strong>Location</strong> — If you grant location permission, we tag Moments with the location name and coordinates (which may be precise, depending on your location permission) where they were captured. Location is visible to Moment participants and their friends within the app. You can deny location permission and the app will function normally without it.</li>
-        <li><strong>Diagnostic data</strong> — We collect crash logs and performance diagnostics to monitor and improve app stability. This data may be linked to an internal user ID (not your phone number or display name).</li>
+        <li><strong>Notifications</strong> — If you enable notifications, we register an Apple push token and app installation identifier to deliver alerts to the correct account and device.</li>
+        <li><strong>Diagnostic data</strong> — We collect crash reports, performance measurements, and technical logs to investigate problems and improve reliability. Diagnostic context can include internal account and Moment identifiers, display names, device and operating-system information, app versions, and details about app actions, connections, and requests. These records may be linked to your account.</li>
       </ul>
 
       <h3>Product analytics:</h3>
-      <p>We use Mixpanel to understand how people use Moment and improve features such as onboarding, capture, and sharing. We send app interaction events, an internal user ID, your display name, a device/app installation identifier, device and operating-system information, and app version/build information to Mixpanel. Analytics events may reference a Moment ID; our analytics event payloads do not include the photo itself or the text of your comments.</p>
+      <p>We use Mixpanel to understand how people use Moment and improve features such as onboarding, capture, and sharing. Mixpanel receives app interaction events, internal user IDs, device/app installation identifiers, device and operating-system information, and app version/build information. It also derives approximate location, such as city or region, from IP addresses; this is separate from the optional device location permission used to tag Moments. Some app versions also send display names, and names already stored in analytics may remain in historical records. Events may reference a Moment ID or include technical error details. Our intended analytics events do not send photo files or comment text as analytics properties.</p>
 
       <h3>Information we do NOT collect:</h3>
       <ul>
-        <li>We do not access your contacts or address book</li>
+        <li>We do not access your device contacts or address book. We do store the friendships you create within Moment.</li>
         <li>We do not bulk-access your photo library. We only access individual photos you explicitly select (for example, choosing a profile photo).</li>
         <li>We do not collect browsing history or advertising identifiers</li>
-        <li>We do not use cookies or tracking pixels</li>
+        <li>We do not use advertising tracking pixels. The private moderation website uses a necessary session cookie for secure reviewer sign-in.</li>
       </ul>
 
       <h2>2. How We Use Your Information</h2>
       <ul>
-        <li><strong>Phone number</strong>: Account creation and verification only</li>
-        <li><strong>Display name and profile</strong>: Shown to your friends within the app</li>
-        <li><strong>Photos</strong>: Stored and shared with Moment participants via our servers</li>
-        <li><strong>Location</strong>: Attached to Moments you capture (optional)</li>
+        <li><strong>Phone number</strong>: Account creation, verification, authentication, and security</li>
+        <li><strong>Display name and profile</strong>: Displaying your identity within Moment, supporting moderation and diagnostics, and, in some app versions, identifying analytics profiles</li>
+        <li><strong>Photos, comments, likes, and friendships</strong>: Providing shared Moments and the friend feed, and enforcing access and blocking rules</li>
+        <li><strong>Location</strong>: Optional device location is attached to Moments; IP-derived approximate location is used for analytics</li>
         <li><strong>Product analytics</strong>: Understanding feature usage and improving the app experience</li>
         <li><strong>Diagnostic data and internal user ID</strong>: Investigating crashes, monitoring performance, and improving reliability</li>
       </ul>
@@ -63,10 +66,11 @@
       <h2>3. Third-Party Services</h2>
       <p>We use the following third-party services to operate the App:</p>
       <ul>
-        <li><strong>Twilio</strong> — SMS delivery for phone verification codes. Twilio receives your phone number solely to deliver the verification SMS. See <a href="https://www.twilio.com/legal/privacy">Twilio's Privacy Policy</a>.</li>
-        <li><strong>Sentry</strong> — Crash reporting and performance monitoring. Diagnostic data may include an internal user ID. See <a href="https://sentry.io/privacy/">Sentry's Privacy Policy</a>.</li>
+        <li><strong>Twilio</strong> — SMS delivery for phone verification codes. Twilio receives your phone number and verification-related information to provide authentication and SMS delivery. See <a href="https://www.twilio.com/legal/privacy">Twilio's Privacy Policy</a>.</li>
+        <li><strong>Sentry</strong> — Crash reporting, performance monitoring, and technical logging using the diagnostic information described above, which may be linked to an internal user ID and include display names. See <a href="https://sentry.io/privacy/">Sentry's Privacy Policy</a>.</li>
         <li><strong>Mixpanel</strong> — Product analytics using the data described above. See <a href="https://mixpanel.com/legal/privacy-policy/">Mixpanel's Privacy Policy</a>.</li>
-        <li><strong>Cloud storage provider</strong> — Photos are stored on cloud servers with access limited to users of the app.</li>
+        <li><strong>Apple Push Notification service</strong> — Delivers optional alerts using a device push token and notification payload, which may include participant names and Moment identifiers.</li>
+        <li><strong>Cloudflare R2 and Railway</strong> — Cloud photo storage and backend hosting, including the account, social, and moderation records needed to operate Moment. We restrict access through application permissions and authorized operational access.</li>
       </ul>
       <p>We do not use advertising networks. Product analytics help us improve Moment; diagnostic data helps us investigate reliability and performance problems.</p>
 
@@ -81,20 +85,22 @@
       <h2>5. Data Retention</h2>
       <ul>
         <li>Your account data is retained as long as your account is active</li>
-        <li>When you delete your account, your data is removed from our systems, including:
+        <li>When you delete your account, we remove your active account and associated app records, including:
           <ul>
             <li>Your user profile (display name, phone number, nickname, bio)</li>
             <li>Photos you uploaded</li>
             <li>Your friend connections</li>
           </ul>
         </li>
-        <li>Deleting your account removes shared Moments you participated in from the app, including for the other participant. Storage cleanup may complete asynchronously. Copies that another person has already saved or exported to their own device are not removed by account deletion.</li>
+        <li>Deleting your account removes shared Moments you participated in from the app, including for the other participant. Photo cleanup is scheduled asynchronously and retried if necessary. Copies another person has saved or exported to their device are not removed.</li>
+        <li>Limited deletion receipts and technical identifiers remain to complete cleanup and prevent deleted content from being uploaded again. Moderation action records may remain for accountability and abuse prevention.</li>
+        <li>Deleting your account does not automatically erase historical analytics or diagnostic records held by Mixpanel and Sentry. Those records are retained according to the configured provider settings. Contact us about access or deletion requests for retained data.</li>
       </ul>
 
       <h2>6. Your Rights and Choices</h2>
       <ul>
-        <li><strong>Delete your account</strong>: You can delete your account at any time from Settings within the app. This removes your profile and uploaded data from our systems.</li>
-        <li><strong>Location permission</strong>: You can grant or revoke location access in your device settings at any time. The app works without location permission.</li>
+        <li><strong>Delete your account</strong>: You can delete your account at any time from Settings within the app. This removes your active profile and shared app content and schedules photo cleanup, subject to the retained records and copies described above.</li>
+        <li><strong>Location permission</strong>: You can grant or revoke location access in your device settings at any time. The app works without location permission. This permission does not control IP-derived approximate location used for analytics.</li>
         <li><strong>Data access</strong>: Contact us to request a copy of your data.</li>
       </ul>
 
@@ -105,7 +111,7 @@
       <p>During a Moment session, photos are transferred directly between nearby devices using Apple's peer-to-peer networking. This transfer happens over your local network — photos travel directly between devices without passing through our servers during capture. Internet connectivity is not required for the core photo capture and transfer experience.</p>
 
       <h2>9. Reporting and Blocking</h2>
-      <p>You can report a Moment, comment, or user from its menu. We store the report target, reporter account, reason (if provided), and review status so we can investigate and respond. We review reports within 48 hours. You can also contact us using the email below.</p>
+      <p>You can report a Moment, comment, or user from its menu. We store the report target, reporter account, reason (if provided), and review status so we can investigate and respond. Authorized reviewers can inspect the reported Moment and its conversation, or the reported profile and its posted Moments when an account is reported. Review actions and their explanations are recorded. We review reports within 48 hours. You can also contact us using the email below.</p>
       <p>Blocking removes your friendship and permanently deletes your shared two-person Moments. While blocked, you cannot see each other's profiles or Moments containing the other person. Unblocking does not restore the friendship or deleted shared Moments.</p>
 
       <h2>10. Changes to This Policy</h2>
