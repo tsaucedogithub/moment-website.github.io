@@ -18,7 +18,7 @@
     </nav>
     <main>
       <h2>Privacy Policy</h2>
-      <p><em>Last updated: September 23, 2026</em></p>
+      <p><em>Last updated: September 26, 2026</em></p>
 
       <p>Moment ("Moment", "we", "our", or "us") operates the Moment mobile application (the "App"). This Privacy Policy explains what information we collect, how we use it, and your choices regarding your data.</p>
 
@@ -43,6 +43,10 @@
 
       <h3>Product analytics:</h3>
       <p>We use Mixpanel to understand how people use Moment and improve features such as onboarding, capture, and sharing. Mixpanel receives app interaction events, internal user IDs, device/app installation identifiers, device and operating-system information, and app version/build information. It also derives approximate location, such as city or region, from IP addresses; this is separate from the optional device location permission used to tag Moments. Some app versions also send display names, and names already stored in analytics may remain in historical records. Events may reference a Moment ID or include technical error details. Our intended analytics events do not send photo files or comment text as analytics properties.</p>
+
+      <h3>Automated photo safety checks:</h3>
+      <p>As we roll out photo screening, newly uploaded Moment photos and profile photos may be checked automatically before they are shared in the app. For these checks, we send a resized copy of the image to Amazon Web Services (AWS Rekognition) in the United States. We remove embedded image metadata from this copy and do not include your name, phone number, or account identifier in the screening request. We have configured AWS to opt out of using this content for service improvement.</p>
+      <p>Photos flagged by these checks may be withheld from sharing and reviewed by an authorized moderator. For a flagged Moment photo, the moderator can see that Moment's photo pair; for a flagged profile photo, the moderator can see that photo. We store the screening result and review decision to operate these safeguards. Automated checks can make mistakes and do not replace reporting or blocking.</p>
 
       <h3>Information we do NOT collect:</h3>
       <ul>
@@ -70,6 +74,7 @@
         <li><strong>Sentry</strong> — Crash reporting, performance monitoring, and technical logging using the diagnostic information described above, which may be linked to an internal user ID and include display names. See <a href="https://sentry.io/privacy/">Sentry's Privacy Policy</a>.</li>
         <li><strong>Mixpanel</strong> — Product analytics using the data described above. See <a href="https://mixpanel.com/legal/privacy-policy/">Mixpanel's Privacy Policy</a>.</li>
         <li><strong>Apple Push Notification service</strong> — Delivers optional alerts using a device push token and notification payload, which may include participant names and Moment identifiers.</li>
+        <li><strong>Amazon Web Services (AWS Rekognition)</strong> — Automated photo screening as described above. Our account is opted out of Rekognition content use for service improvement. See <a href="https://aws.amazon.com/privacy/">AWS’s Privacy Notice</a>.</li>
         <li><strong>Cloudflare R2 and Railway</strong> — Cloud photo storage and backend hosting, including the account, social, and moderation records needed to operate Moment. We restrict access through application permissions and authorized operational access.</li>
       </ul>
       <p>We do not use advertising networks. Product analytics help us improve Moment; diagnostic data helps us investigate reliability and performance problems.</p>
@@ -93,6 +98,7 @@
           </ul>
         </li>
         <li>Deleting your account removes shared Moments you participated in from the app, including for the other participant. Photo cleanup is scheduled asynchronously and retried if necessary. Copies another person has saved or exported to their device are not removed.</li>
+        <li>Unconfirmed screening uploads are eligible for cleanup after one day. Photos still held for review expire after 30 days and remain unshared; photo deletion is processed asynchronously. Approved photos follow the ordinary account and Moment retention rules.</li>
         <li>Limited deletion receipts and technical identifiers remain to complete cleanup and prevent deleted content from being uploaded again. Moderation action records may remain for accountability and abuse prevention.</li>
         <li>Deleting your account does not automatically erase historical analytics or diagnostic records held by Mixpanel and Sentry. Those records are retained according to the configured provider settings. Contact us about access or deletion requests for retained data.</li>
       </ul>
