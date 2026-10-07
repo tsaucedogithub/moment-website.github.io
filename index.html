@@ -1,28 +1,723 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Moment</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moment</title>
+<meta name="description" content="Capture Moments with your friends, from two perspectives at once.">
+<link rel="canonical" href="https://photosmomentapp.com/">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Moment">
+<meta property="og:url" content="https://photosmomentapp.com/">
+<meta property="og:title" content="Moment">
+<meta property="og:description" content="Life is better when shared.">
+<!-- TODO: new logo/app icon (og.png shows the placeholder icon) -->
+<meta property="og:image" content="https://photosmomentapp.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Moment app icon on stone paper, with the words: Life is better when shared. Capture Moments with your friends. photosmomentapp.com">
+<meta name="twitter:card" content="summary_large_image">
+
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#FCFBF9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E0D0C" media="(prefers-color-scheme: dark)">
+
+<!-- TODO: new logo/app icon -->
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+
+<link rel="preload" href="assets/fonts/Satoshi-Black.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+<script>
+(function(){
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduce) document.documentElement.classList.add('anim', 'motion');
+})();
+</script>
+<style>
+/* hero */
+.hero .wrap{display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:48px;align-items:center;min-height:min(680px,calc(100vh - 72px));padding-top:8px;padding-bottom:40px}
+h1{font:900 clamp(40px,4.4vw,62px)/1.02 var(--font);letter-spacing:-.035em;margin:0 0 24px}
+.lede{font-size:19px;line-height:1.5;color:var(--ink);margin:0 0 32px;max-width:30em}
+.meta{font:500 13px/17px var(--font);color:var(--ink2)}
+
+.stage{position:relative;min-width:0}
+.stage .gwrap{max-width:600px;margin:0 auto}
+#graph{display:block;width:100%;height:auto;overflow:hidden;font-family:var(--font)}
+.anim #graph,.anim .zoom,.anim #lead{visibility:hidden}
+
+/* the blown-up edge: one Moment from the graph, large, parked just above its chip (below it on phones); JS places it */
+.zoom{position:absolute;left:0;top:0;width:200px;margin:0;z-index:1;display:flex;flex-direction:column;transform-origin:50% 100%}
+.zoom .moment{width:100%}
+.zoom figcaption{order:-1;margin:0 0 8px;font:500 13px/17px var(--font);color:var(--ink2);white-space:nowrap}
+.zoom figcaption b{font-weight:700;color:var(--ink)}
+.stage.below .zoom{transform-origin:50% 0}
+.stage.below .zoom figcaption{order:0;margin:8px 0 0}
+#lead{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:2}
+#lead path{fill:none;stroke:var(--ink);stroke-width:1.25;stroke-dasharray:1 1}
+#lead circle{fill:var(--ink)}
+#graph .hl{fill:none;stroke:var(--ink);stroke-width:1.1;opacity:0}
+#graph #e-TA .ln.live{opacity:1}
+#graph #c-TA .hl{opacity:1}
+
+#graph .rim{fill:var(--bg);stroke:var(--line);stroke-width:1;filter:drop-shadow(0 2px 5px rgba(26,24,20,.12))}
+#graph .ring{fill:none;stroke:var(--ink);stroke-width:1.25;opacity:0}
+#graph .flash{fill:#fff;opacity:0}
+#graph .name{font:500 10.5px var(--font);fill:var(--ink2);text-anchor:middle;paint-order:stroke;stroke:var(--bg);stroke-width:3px;stroke-linejoin:round}
+#graph .ln{fill:none;stroke:var(--edge);stroke-width:1.5;stroke-linecap:butt;stroke-dasharray:1 1;stroke-dashoffset:0}
+#graph .ln.live{stroke:var(--ink);stroke-width:1.75;opacity:0}
+#graph .cap{font:500 8px var(--font);fill:var(--ink);text-anchor:middle;opacity:0;pointer-events:none}
+#graph .chip{cursor:pointer;outline:none}
+#graph .chip .hit{fill:transparent;pointer-events:all}
+#graph .chip:focus-visible .hit{stroke:var(--ink);stroke-width:1.2;rx:6}
+#graph .badge circle{fill:var(--ink);stroke:var(--bg);stroke-width:1.2}
+#graph .badge text{font:700 6.5px var(--font);font-variant-numeric:tabular-nums;fill:var(--on-ink);text-anchor:middle;pointer-events:none}
+#graph .card .shadow,#graph .back .shadow{fill:#1C1A17;filter:drop-shadow(0 1px 1.5px rgba(26,24,20,.25)) drop-shadow(0 5px 9px rgba(26,24,20,.2))}
+
+/* a Moment as an object on the page */
+.moment{position:relative;aspect-ratio:2/3;overflow:hidden;background:#1C1A17;border-radius:4px;box-shadow:var(--shadow);container-type:inline-size}
+.moment img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
+/* chip peek */
+.peek{position:absolute;z-index:5;width:160px;pointer-events:none;opacity:0;transform:scale(.6);transition:opacity .16s ease,transform .22s cubic-bezier(.2,.9,.3,1.1)}
+.peek.on{opacity:1;transform:scale(1)}
+.peek .row{display:flex;gap:8px}
+.peek .row .moment{flex:1 1 0;min-width:0}
+.peek .who{display:table;margin:8px auto 0;padding:4px 10px;border-radius:999px;background:var(--bg);border:1px solid var(--line);color:var(--ink);font:500 12px/16px var(--font);white-space:nowrap}
+
+/* sections */
+section{padding:88px 0}
+section + section{border-top:1px solid var(--line)}
+h2{font:700 clamp(28px,3.4vw,40px)/1.12 var(--font);letter-spacing:-.02em;margin:0 0 12px}
+h3{font:700 19px/1.3 var(--font);letter-spacing:-.01em;margin:0 0 8px}
+p{margin:0}
+.muted{color:var(--ink2)}
+
+.intro{max-width:36em;color:var(--ink2)}
+.strip{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:40px}
+.strip figure{margin:0}
+.strip figcaption{margin-top:10px}
+
+/* how it works: ported from the Darkroom draft, scoped to #how */
+#how{--surface2:#E6E3DE;--ink3:#A8A39C;--bezel:#1B1A18;--bezel-edge:#3A3835;
+  --pshadow:0 24px 60px rgba(26,24,20,.18),0 3px 10px rgba(26,24,20,.10)}
+@media (prefers-color-scheme:dark){#how{--surface2:#282623;--ink3:#5F5B55;--pshadow:0 30px 70px rgba(0,0,0,.55),0 4px 14px rgba(0,0,0,.4)}}
+#how .title{font:700 clamp(30px,3.6vw,44px)/1.08 var(--font);letter-spacing:-.025em;margin:0}
+/* one row, read left to right: join phone, the two cameras, the Moment they make; each label centred under its own visual */
+#how .flow{display:grid;grid-template-columns:auto;grid-template-areas:"v1" "c1" "v2" "c2" "v3" "c3";justify-content:center;justify-items:center;padding-top:40px}
+#how .v1{grid-area:v1}#how .v2{grid-area:v2}#how .v3{grid-area:v3}#how .c1{grid-area:c1}#how .c2{grid-area:c2}#how .c3{grid-area:c3}
+#how .cap{margin:24px 0 56px;font:700 19px/1.3 var(--font);letter-spacing:-.01em;display:flex;align-items:baseline;justify-content:center;gap:10px;text-align:center}
+#how .cap.c3{margin-bottom:0}
+#how .cap .n{font:700 15px/1 var(--font);color:var(--ink2);font-variant-numeric:tabular-nums}
+#how .pair{display:flex;justify-content:center;align-items:flex-start;--s:.42}
+@media (min-width:641px){
+  /* labels take no width of their own, so each column is exactly its visual and the label centres on it */
+  #how .flow{grid-template-columns:repeat(3,auto);grid-template-areas:"v1 v2 v3" "c1 c2 c3";column-gap:var(--fg,28px);align-items:center;padding-top:48px}
+  #how .cap{margin:32px 0 0;align-self:start;justify-self:stretch;contain:inline-size;white-space:nowrap}
+}
+@media (min-width:641px) and (max-width:899px){#how .cap{display:block;font-size:15px;white-space:normal}#how .cap .n{font-size:13px;margin-right:6px}}
+@media (min-width:900px) and (max-width:1099px){#how .cap{font-size:17px;gap:8px}#how .cap .n{font-size:14px}}
+@media (min-width:760px){#how .flow{--fg:40px}}
+@media (min-width:900px){#how .flow{--fg:56px;padding-top:64px}}
+@media (min-width:1100px){#how .flow{--fg:64px}}
+@media (min-width:1280px){#how .flow{--fg:72px}}
+
+/* CSS phone (393 x 852 logical, scaled by --s) */
+#how .dev{position:relative;flex:0 0 auto;width:calc(393px * var(--s));height:calc(852px * var(--s))}
+#how .scr{position:absolute;left:0;top:0;width:393px;height:852px;transform:scale(var(--s));transform-origin:0 0;border-radius:55px;overflow:hidden;
+  background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.25;
+  box-shadow:0 0 0 11px var(--bezel),0 0 0 12.5px var(--bezel-edge),var(--pshadow)}
+#how .status{position:absolute;top:0;left:0;right:0;height:54px;display:flex;align-items:center;justify-content:space-between;padding:6px 34px 0 46px;font:600 17px -apple-system,system-ui,sans-serif;z-index:20;color:var(--ink)}
+#how .status .r{display:flex;gap:6px;align-items:center}
+#how .island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:124px;height:36px;border-radius:20px;background:#000;z-index:21}
+#how .home{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:139px;height:5px;border-radius:3px;background:var(--ink);opacity:.85;z-index:21}
+
+/* in-phone UI, per design/ui-board foundations, on the site tokens */
+#how .p-ic{display:inline-block;flex:0 0 auto;width:24px;height:24px;background:currentColor;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
+#how .i-flip{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round' d='M4.5 12a7.5 7.5 0 0 1 13-5.1M19.5 12a7.5 7.5 0 0 1-13 5.1M17.8 3.3v3.9h-3.9M6.2 20.7v-3.9h3.9'/%3E%3C/svg%3E")}
+#how .i-close{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round' d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E")}
+#how .i-link{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round' d='M10 14a4 4 0 0 0 5.66 0l3-3A4 4 0 0 0 13 5.34l-1 1M14 10a4 4 0 0 0-5.66 0l-3 3A4 4 0 0 0 11 18.66l1-1'/%3E%3C/svg%3E")}
+#how .i-chev{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round' d='M9 5l7 7-7 7'/%3E%3C/svg%3E")}
+#how .i-feed{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round' x='4.5' y='8' width='15' height='12.5' rx='2.5'/%3E%3Cpath fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round' d='M7.5 4.5h9'/%3E%3C/svg%3E")}
+#how .i-mark{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-20 -20 740 558'%3E%3Cdefs%3E%3Cmask id='k'%3E%3Crect x='-20' y='-20' width='740' height='558' fill='white'/%3E%3Cpath d='M196 251C196 195.2 241.2 150 297 150H599C654.8 150 700 195.2 700 251V417C700 472.8 654.8 518 599 518H297C241.2 518 196 472.8 196 417V251Z' fill='black' stroke='black' stroke-width='44'/%3E%3C/mask%3E%3C/defs%3E%3Cg mask='url(%23k)'%3E%3Crect x='30' y='30' width='455' height='326' rx='66' fill='none' stroke='%23000' stroke-width='60'/%3E%3C/g%3E%3Cpath d='M196 251C196 195.2 241.2 150 297 150H599C654.8 150 700 195.2 700 251V417C700 472.8 654.8 518 599 518H297C241.2 518 196 472.8 196 417V251Z' fill='%23000'/%3E%3C/svg%3E")}
+#how .i-mark{width:30px;height:24px}
+#how .p-av{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;border-radius:50%;overflow:hidden;background:var(--surface2);width:44px;height:44px}
+#how .p-av img{width:100%;height:100%;object-fit:cover;max-width:none}
+#how .p-av.s26{width:26px;height:26px}
+#how .p-av.fr{background:#1C1A17 url("assets/img/av-friend.webp") center/cover no-repeat}
+#how .p-title{font:700 24px/30px var(--font);letter-spacing:-.4px}
+#how .p-over{font:700 12px/16px var(--font);letter-spacing:.6px;text-transform:uppercase;color:var(--ink2)}
+#how .p-wordmark{font:900 24px/30px var(--font);letter-spacing:-.6px}
+#how .p-btn{display:flex;align-items:center;justify-content:center;gap:8px;height:52px;padding:0 24px;border-radius:999px;font:700 16px/1 var(--font);letter-spacing:-.1px;white-space:nowrap}
+#how .p-btn.primary{background:var(--ink);color:var(--on-ink)}
+#how .p-btn.secondary{background:var(--bg);color:var(--ink)}
+#how .p-btn.pill{height:36px;padding:0 18px;font-size:15px}
+#how .p-topbar{position:absolute;left:0;right:0;top:54px;height:48px;display:flex;align-items:center;padding:0 6px 0 16px;z-index:10;background:var(--bg)}
+#how .p-topbar .p-wordmark{flex:1}
+#how .p-page{position:absolute;left:0;right:0;top:102px;bottom:83px;overflow:hidden;padding:0 16px}
+#how .p-sh{display:flex;align-items:center;justify-content:space-between;padding:0 4px 8px}
+#how .p-scan{display:inline-flex;align-items:center;gap:8px;font:500 13px/17px var(--font);color:var(--ink2)}
+#how .p-scan i{position:relative;width:6px;height:6px;border-radius:50%;background:var(--ink2)}
+#how .p-scan i::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:1.5px solid var(--ink2);opacity:0}
+.motion #how .p-scan i::after{animation:how-ping 2.2s ease-out infinite}
+@keyframes how-ping{0%{transform:scale(.4);opacity:.8}100%{transform:scale(1.6);opacity:0}}
+#how .p-group{background:var(--surface);border-radius:16px;overflow:hidden}
+#how .p-row{position:relative;display:flex;align-items:center;gap:12px;min-height:64px;padding:0 14px 0 16px;font:500 16px/21px var(--font)}
+#how .p-row.short{min-height:52px}
+#how .p-row + .p-row::before{content:"";position:absolute;top:0;right:0;left:16px;height:1px;background:var(--line)}
+#how .p-row .lbl{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+#how .p-row .lbl small{font:500 13px/17px var(--font);color:var(--ink2)}
+#how .p-row .p-ic{width:20px;height:20px}
+#how .p-row .chev{width:16px;height:16px;color:var(--ink3)}
+#how .p-footer{position:absolute;bottom:99px;left:16px;right:16px;display:flex;flex-direction:column;gap:4px;z-index:5}
+#how .p-tabbar{position:absolute;left:0;right:0;bottom:0;height:83px;display:flex;align-items:flex-start;padding-top:4px;background:var(--bg);box-shadow:0 -1px 0 var(--line);z-index:15}
+#how .p-tab{flex:1;height:44px;display:flex;align-items:center;justify-content:center;color:var(--ink);opacity:.42}
+#how .p-tab.on{opacity:1}
+
+/* step 2: two landscape cameras, one tap, both photos stacked into one Moment.
+   Landscape phone: 852 x 393 logical, scaled by --s * --k; the Moment is scaled by --s, so each 4:3 preview grows by 1/--k as it lands */
+#how .duo{--s:.4;--k:.75;--g:22px;position:relative;
+  --ps:calc(var(--s)*var(--k));--pw:calc(852px*var(--ps));--ph:calc(393px*var(--ps));
+  width:var(--pw);height:calc(var(--ph)*2 + var(--g))}
+#how .duo .ld{position:absolute;left:0;width:var(--pw);height:var(--ph)}
+#how .duo .ld.host{top:0}
+#how .duo .ld.guest{top:calc(var(--ph) + var(--g))}
+#how .ld .scr{width:852px;height:393px;background:#000;color:#fff;transform:scale(var(--ps))}
+#how .l-island{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:36px;height:124px;border-radius:20px;background:#000;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);z-index:21}
+#how .l-home{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:5px;height:139px;border-radius:3px;background:#fff;opacity:.85;z-index:21}
+#how .l-rail{position:absolute;left:54px;width:48px;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:12px 0;z-index:6}
+#how .l-btn{position:relative;width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#fff}
+#how .l-btn::before{content:"";position:absolute;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.13)}
+#how .l-btn .p-ic{position:relative;width:20px;height:20px}
+#how .l-chip{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
+#how .l-chip .p-av{width:28px;height:28px;box-shadow:0 0 0 1.5px #000,0 0 0 3px #fff}
+#how .l-vf{position:absolute;left:102px;top:0;width:524px;height:393px;overflow:hidden;background-color:#111;background-repeat:no-repeat;background-size:524px 786px}
+#how .l-vf.up{background-position:0 0}
+#how .l-vf.dn{background-position:0 -393px}
+#how .l-zoom{position:absolute;right:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:4px;padding:3px;border-radius:999px;background:rgba(0,0,0,.45);z-index:2}
+#how .l-zoom span{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:999px;color:rgba(255,255,255,.9);font:500 13px/1 var(--font);font-variant-numeric:tabular-nums}
+#how .l-zoom span.on{background:#fff;color:#000;font-weight:700}
+#how .l-flash{position:absolute;inset:0;background:#fff;opacity:0;z-index:4}
+#how .l-deck{position:absolute;left:626px;right:0;top:0;bottom:0;display:flex;align-items:center;justify-content:center}
+#how .l-shutter{position:relative;width:78px;height:78px;border-radius:50%;box-shadow:inset 0 0 0 3px #fff}
+#how .l-shutter::after{content:"";position:absolute;inset:9px;border-radius:50%;background:#fff}
+#how .l-time{position:absolute;left:0;right:0;bottom:22px;text-align:center;font:500 26px/1 var(--font);color:rgba(255,255,255,.8);font-variant-numeric:tabular-nums}
+/* the two captured frames: each is laid out on its half of the Moment (measured live) and transformed back onto its viewfinder,
+   so it renders at full size, keeps one crop (same 4:3 box, same background mapping) and lands at transform:none, pixel for pixel on the half */
+#how .duo .ghost{position:absolute;left:var(--gx,0px);top:var(--gy,0px);width:var(--gw,0px);height:var(--gh,0px);overflow:hidden;background-repeat:no-repeat;background-size:100% 200%;opacity:0;z-index:30;
+  transform-origin:0 0;transform:translate(var(--ix,0px),var(--iy,0px)) scale(var(--is,1))}
+#how .duo .ghost::after{content:"";position:absolute;inset:0;background:#fff;opacity:0}
+#how .duo .ghost.up{background-position:0 0}
+#how .duo .ghost.dn{background-position:0 100%}
+#how .mo{--s:.4;--vw:calc(524px*var(--s));--st:calc(var(--vw)*.09);position:relative;width:var(--vw);display:flex;flex-direction:column;container-type:inline-size}
+#how .mo .mph{position:relative;z-index:1;width:100%;height:calc(var(--vw)*1.5);border-radius:4px 4px 0 0;overflow:hidden;box-shadow:var(--pshadow),inset 0 0 0 1.5px color-mix(in srgb,var(--ink) 22%,transparent);
+  background:color-mix(in srgb,var(--ink) 3%,transparent)}
+#how .mo .mph::before{content:"";position:absolute;left:0;right:0;top:50%;height:1.5px;margin-top:-.75px;background:color-mix(in srgb,var(--ink) 22%,transparent)}
+#how .mo .hf{position:absolute;left:0;width:100%;height:50%;background-repeat:no-repeat;background-size:100% 200%}
+#how .mo .hf.up{top:0;background-position:0 0}
+#how .mo .hf.dn{bottom:0;background-position:0 100%}
+/* the exported Moment's black strip: 9% of the width, glyph + wordmark in white, date · time · place in 70% white */
+#how .xs{--glyph:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-20 -20 740 558'%3E%3Cdefs%3E%3Cmask id='k'%3E%3Crect x='-20' y='-20' width='740' height='558' fill='white'/%3E%3Cpath d='M196 251C196 195.2 241.2 150 297 150H599C654.8 150 700 195.2 700 251V417C700 472.8 654.8 518 599 518H297C241.2 518 196 472.8 196 417V251Z' fill='black' stroke='black' stroke-width='44'/%3E%3C/mask%3E%3C/defs%3E%3Cg mask='url(%23k)'%3E%3Crect x='30' y='30' width='455' height='326' rx='66' fill='none' stroke='%23000' stroke-width='60'/%3E%3C/g%3E%3Cpath d='M196 251C196 195.2 241.2 150 297 150H599C654.8 150 700 195.2 700 251V417C700 472.8 654.8 518 599 518H297C241.2 518 196 472.8 196 417V251Z' fill='%23000'/%3E%3C/svg%3E");flex:0 0 auto;height:9cqw;display:flex;align-items:center;justify-content:space-between;gap:3cqw;padding:0 4.1cqw;background:#000;color:#fff;white-space:nowrap;border-radius:0 0 4px 4px;box-shadow:var(--pshadow)}
+#how .xs .lg{display:flex;align-items:center;gap:1.5cqw;flex:0 0 auto}
+#how .xs .gl{display:block;width:5.4cqw;aspect-ratio:740/558;background:#fff;-webkit-mask:var(--glyph) center/contain no-repeat;mask:var(--glyph) center/contain no-repeat}
+#how .xs .wm{font:900 4.1cqw/1 var(--font);letter-spacing:-.12cqw}
+#how .xs .md{font:500 3.3cqw/1 var(--font);color:rgba(255,255,255,.7);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;min-width:0}
+@media (max-width:379px){#how .duo,#how .mo{--s:.37}}
+@media (min-width:430px) and (max-width:640px){#how .duo,#how .mo{--s:.48}}
+@media (min-width:600px) and (max-width:640px){#how .duo,#how .mo{--s:.66}}
+/* from 641px: one row, the two phones centred on the Moment's height; the join phone matches the Moment's height */
+@media (min-width:641px){
+  #how .duo,#how .mo{--s:.29}#how .duo{--g:16px}
+  #how .pair{--s:.286}
+}
+@media (min-width:760px){#how .duo,#how .mo{--s:.34}#how .duo{--g:20px}#how .pair{--s:.337}}
+@media (min-width:900px){#how .duo,#how .mo{--s:.40}#how .duo{--g:24px}#how .pair{--s:.397}}
+@media (min-width:1100px){#how .duo,#how .mo{--s:.46}#how .pair{--s:.453}}
+@media (min-width:1280px){#how .duo,#how .mo{--s:.54}#how .pair{--s:.526}}
+/* one tap, one clock (6.4s): shutter, both phones flash, each photo comes up out of the flash on its own screen, lifts, glides into its half
+   of the Moment and is swapped for it on the landing frame; then the strip slides out from under. Starts when scrolled into view */
+.motion #how .flow:not(.fire) .mo .hf,.motion #how .flow:not(.fire) .mo .xs{opacity:0}
+.motion #how .fire .l-flash{animation:how-flash 6.4s linear infinite}
+.motion #how .fire .host .l-shutter::after{animation:how-press 6.4s infinite}
+.motion #how .fire .ghost{animation:how-fly 6.4s linear infinite}
+.motion #how .fire .ghost::after{animation:how-develop 6.4s linear infinite}
+.motion #how .fire .mo .hf{animation:how-land 6.4s linear infinite}
+.motion #how .fire .mo .xs{animation:how-strip 6.4s linear infinite}
+@keyframes how-flash{0%,39.9%{opacity:0}40%{opacity:1;animation-timing-function:cubic-bezier(.3,0,.6,1)}52%,100%{opacity:0}}
+@keyframes how-press{0%,35%{transform:scale(1)}38.5%{transform:scale(.86)}42%,100%{transform:scale(1)}}
+@keyframes how-develop{0%,40%{opacity:1;animation-timing-function:cubic-bezier(.3,0,.6,1)}47%,100%{opacity:0}}
+@keyframes how-fly{
+  0%,39.9%{opacity:0;transform:translate(var(--ix,0px),var(--iy,0px)) scale(var(--is,1));box-shadow:none}
+  40%{opacity:1;box-shadow:0 0 0 rgba(0,0,0,0)}
+  45%{box-shadow:0 0 0 rgba(0,0,0,0);animation-timing-function:ease-out}
+  49%{transform:translate(var(--ix,0px),var(--iy,0px)) scale(var(--is,1));box-shadow:0 18px 40px rgba(20,18,14,.28);animation-timing-function:cubic-bezier(.45,0,.2,1)}
+  60%{box-shadow:0 18px 40px rgba(20,18,14,.28)}
+  66%{opacity:1;transform:none;box-shadow:0 0 0 rgba(0,0,0,0)}
+  67%{opacity:1;transform:none}
+  67.1%,100%{opacity:0;transform:none;box-shadow:none}}
+@keyframes how-land{0%,65.9%{opacity:0}66%,91%{opacity:1}98%,100%{opacity:0}}
+@keyframes how-strip{0%,67%{opacity:0;transform:translateY(-100%);animation-timing-function:cubic-bezier(.2,.7,.2,1)}75%,91%{opacity:1;transform:none}98%,100%{opacity:0;transform:none}}
+html:not(.motion) #how .l-flash{opacity:.45}
+html:not(.motion) #how .host .l-shutter::after{transform:scale(.86)}
+
+
+.faq{max-width:760px}
+.faq details{border-bottom:1px solid var(--line)}
+.faq summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:20px 0;font:700 18px/1.35 var(--font);letter-spacing:-.01em}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font:400 24px/1 var(--font);color:var(--ink2);transition:transform .2s}
+.faq details[open] summary::after{transform:rotate(45deg)}
+.faq details p{padding:0 0 22px;color:var(--ink2);max-width:40em}
+
+.closer{text-align:center}
+.closer h2{margin-bottom:24px}
+.closer .cta{justify-content:center}
+
+@media (max-width:1179px){
+  .hero .wrap{grid-template-columns:1fr;gap:40px;min-height:0;padding-top:24px}
+}
+@media (max-width:900px){
+  .hero .wrap{gap:16px;padding-top:8px}
+  .stage{order:-1}
+}
+@media (max-width:640px){
+  #graph .wide{display:none}
+  h1{font-size:40px}
+  .lede{font-size:17px}
+  section{padding:64px 0}
+  .strip{grid-template-columns:repeat(2,1fr);gap:12px}
+  .peek{width:136px}
+  .peek .row{gap:6px}
+}
+@media (prefers-reduced-motion:reduce){
+  .peek,.faq summary::after{transition:none}
+}
+</style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>Moment</h1>
-    </header>
-    <nav>
-      <a href="index.html" class="active">Home</a>
-      <a href="privacy.html">Privacy Policy</a>
-      <a href="support.html">Support</a>
-    </nav>
-    <main>
-      <p class="tagline">A shared camera app for capturing moments together.</p>
-      <p>Moment is a photo app for friends. When you're together, one person starts a Moment and the other joins. Take two photos, share them as one Moment, and see what your friends have been up to.</p>
-    </main>
-    <footer>
-      <p>&copy; 2026 Moment</p>
-    </footer>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="Moment home"><span class="mark" aria-hidden="true"></span><span class="wm">Moment</span></a>
+    <nav aria-label="Primary"><a href="#how">How it works</a><a href="#faq">FAQ</a><a href="support.html">Support</a></nav>
   </div>
+</header>
+
+<main>
+<div class="hero">
+  <div class="wrap">
+    <div class="copy">
+      <h1>Life is better when shared.</h1>
+      <p class="lede">Capture Moments with your friends, from two perspectives at once.</p>
+      <div class="cta"><!-- TODO: App Store URL --><a class="store" href="#"><small>Download on the</small><span>App Store</span></a></div>
+    </div>
+    <div class="stage" id="stage">
+      <div class="gwrap"><svg id="graph" viewBox="40 50 460 345" role="img" aria-label="Friend graph"><defs><clipPath id="cp34"><circle r="34"/></clipPath><clipPath id="cp27"><circle r="27"/></clipPath><clipPath id="cpCard"><rect x="-35.0" y="-52.5" width="70" height="105" rx="5"/></clipPath></defs><g id="cam"><g id="edges"><g class="edge" id="e-TA"><path class="ln" pathLength="1" d="M300 207.5L230 215"/><path class="ln" pathLength="1" d="M300 207.5L370 200"/><path class="ln live" pathLength="1" d="M300 207.5L230 215"/><path class="ln live" pathLength="1" d="M300 207.5L370 200"/></g><g class="edge" id="e-FK"><path class="ln" pathLength="1" d="M125 177.5L110 250"/><path class="ln" pathLength="1" d="M125 177.5L140 105"/><path class="ln live" pathLength="1" d="M125 177.5L110 250"/><path class="ln live" pathLength="1" d="M125 177.5L140 105"/></g><g class="edge" id="e-TF"><path class="ln" pathLength="1" d="M170 232.5L230 215"/><path class="ln" pathLength="1" d="M170 232.5L110 250"/><path class="ln live" pathLength="1" d="M170 232.5L230 215"/><path class="ln live" pathLength="1" d="M170 232.5L110 250"/></g><g class="edge wide" id="e-TC"><path class="ln" pathLength="1" d="M290 280L230 215"/><path class="ln" pathLength="1" d="M290 280L350 345"/><path class="ln live" pathLength="1" d="M290 280L230 215"/><path class="ln live" pathLength="1" d="M290 280L350 345"/></g><g class="edge wide" id="e-TR"><path class="ln" pathLength="1" d="M190 281.5L230 215"/><path class="ln" pathLength="1" d="M190 281.5L150 348"/><path class="ln live" pathLength="1" d="M190 281.5L230 215"/><path class="ln live" pathLength="1" d="M190 281.5L150 348"/></g><g class="edge" id="e-TI"><path class="ln" pathLength="1" d="M342.5 268.5L230 215"/><path class="ln" pathLength="1" d="M342.5 268.5L455 322"/><path class="ln live" pathLength="1" d="M342.5 268.5L230 215"/><path class="ln live" pathLength="1" d="M342.5 268.5L455 322"/></g></g><g id="nodes"><g class="node" id="n-T" style="transform:translate(230px,215px)"><g class="pop"><circle class="rim" r="36.5"/><g clip-path="url(#cp34)"><svg x="-34" y="-34" width="68" height="68" viewBox="0 0 256 256" preserveAspectRatio="xMidYMid slice"><image href="assets/img/av-tristan.webp" width="256" height="256"/></svg><circle class="flash" r="34"/></g><circle class="ring" r="37.5"/><text class="name" y="49">Tristan</text></g></g><g class="node" id="n-A" style="transform:translate(370px,200px)"><g class="pop"><circle class="rim" r="36.5"/><g clip-path="url(#cp34)"><svg x="-34" y="-34" width="68" height="68" viewBox="0 0 256 256" preserveAspectRatio="xMidYMid slice"><image href="assets/img/av-aaron.webp" width="256" height="256"/></svg><circle class="flash" r="34"/></g><circle class="ring" r="37.5"/><text class="name" y="49">Aaron</text></g></g><g class="node" id="n-K" style="transform:translate(140px,105px)"><g class="pop"><circle class="rim" r="29.5"/><g clip-path="url(#cp27)"><svg x="-27" y="-27" width="54" height="54" viewBox="0 0 256 256" preserveAspectRatio="xMidYMid slice"><image href="assets/img/av-kieran.webp" width="256" height="256"/></svg><circle class="flash" r="27"/></g><circle class="ring" r="30.5"/><text class="name" y="42">Kieran</text></g></g><g class="node" id="n-F" style="transform:translate(110px,250px)"><g class="pop"><circle class="rim" r="29.5"/><g clip-path="url(#cp27)"><svg x="-27" y="-27" width="54" height="54" viewBox="0 0 110 110" preserveAspectRatio="xMidYMid slice"><image href="assets/img/av-finn.webp" width="110" height="110"/></svg><circle class="flash" r="27"/></g><circle class="ring" r="30.5"/><text class="name" y="42">Finn</text></g></g><g class="node wide" id="n-C" style="transform:translate(350px,345px)"><g class="pop"><circle class="rim" r="29.5"/><g clip-path="url(#cp27)"><svg x="-27" y="-27" width="54" height="54" viewBox="0 0 256 256" preserveAspectRatio="xMidYMid slice"><image href="assets/img/av-christian.webp" width="256" height="256"/></svg><circle class="flash" r="27"/></g><circle class="ring" r="30.5"/><text class="name" y="42">Christian</text></g></g><g class="node wide" id="n-R" style="transform:translate(150px,348px)"><g class="pop"><circle class="rim" r="29.5"/><g clip-path="url(#cp27)"><svg x="-27" y="-27" width="54" height="54" viewBox="0 0 256 256" preserveAspectRatio="xMidYMid slice"><image href="assets/img/av-ryan.webp" width="256" height="256"/></svg><circle class="flash" r="27"/></g><circle class="ring" r="30.5"/><text class="name" y="42">Ryan</text></g></g><g class="node" id="n-I" style="transform:translate(455px,322px)"><g class="pop"><circle class="rim" r="29.5"/><g clip-path="url(#cp27)"><svg x="-27" y="-27" width="54" height="54" viewBox="0 0 256 256" preserveAspectRatio="xMidYMid slice"><image href="assets/img/av-ria.webp" width="256" height="256"/></svg><circle class="flash" r="27"/></g><circle class="ring" r="30.5"/><text class="name" y="42">Ria</text></g></g></g><g id="chips"><g class="chip stack" id="c-TA" style="transform:translate(300px,207.5px)" tabindex="0" role="button" aria-label="3 Moments: Tristan and Aaron" data-names="Tristan &amp; Aaron" data-imgs="assets/img/m10.webp|assets/img/m5.webp|assets/img/m6.webp" data-times="7:39:04 pm|6:21:02 pm|6:25:53 pm" data-places="San Francisco, CA|San Francisco, CA|San Francisco, CA"><rect class="hit" x="-22" y="-26" width="44" height="52"/><g class="back" style="transform:translate(-4.5px,-2px) rotate(-9deg) scale(0.3143)"><rect class="shadow" x="-35.0" y="-52.5" width="70" height="105" rx="5"/><g clip-path="url(#cpCard)"><image href="assets/img/m5.webp" x="-35.0" y="-52.5" width="70" height="105" preserveAspectRatio="xMidYMid slice"/></g></g><g class="back" style="transform:translate(4.5px,-3px) rotate(8deg) scale(0.3143)"><rect class="shadow" x="-35.0" y="-52.5" width="70" height="105" rx="5"/><g clip-path="url(#cpCard)"><image href="assets/img/m6.webp" x="-35.0" y="-52.5" width="70" height="105" preserveAspectRatio="xMidYMid slice"/></g></g><g class="card" style="transform:scale(0.3143)"><rect class="shadow" x="-35.0" y="-52.5" width="70" height="105" rx="5"/><g clip-path="url(#cpCard)"><image href="assets/img/m10.webp" x="-35.0" y="-52.5" width="70" height="105" preserveAspectRatio="xMidYMid slice"/></g></g><rect class="hl" x="-13.5" y="-19" width="27" height="38" rx="3"/><g class="badge" style="transform:translate(13px,-17px)"><circle r="5.5"/><text y="2.6">3</text></g><text class="cap" y="-46">San Francisco · 7:39 pm</text></g><g class="chip" id="c-FK" style="transform:translate(125px,177.5px)" tabindex="0" role="button" aria-label="Moment: Finn and Kieran, 2:42:13 pm, Alpine, UT" data-names="Finn &amp; Kieran" data-imgs="assets/img/m3.webp" data-times="2:42:13 pm" data-places="Alpine, UT"><rect class="hit" x="-22" y="-26" width="44" height="52"/><g class="card" style="transform:scale(0.3143)"><rect class="shadow" x="-35.0" y="-52.5" width="70" height="105" rx="5"/><g clip-path="url(#cpCard)"><image href="assets/img/m3.webp" x="-35.0" y="-52.5" width="70" height="105" preserveAspectRatio="xMidYMid slice"/></g></g></g><g class="chip stack" id="c-TF" style="transform:translate(170px,232.5px)" tabindex="0" role="button" aria-label="2 Moments: Tristan and Finn" data-names="Tristan &amp; Finn" data-imgs="assets/img/m2.webp|assets/img/m1.webp" data-times="10:09:47 am|12:14:00 pm" data-places="Steamboat Springs, CO|Salt Lake City, UT"><rect class="hit" x="-22" y="-26" width="44" height="52"/><g class="back" style="transform:translate(4.5px,-3px) rotate(8deg) scale(0.3143)"><rect class="shadow" x="-35.0" y="-52.5" width="70" height="105" rx="5"/><g clip-path="url(#cpCard)"><image href="assets/img/m1.webp" x="-35.0" y="-52.5" width="70" height="105" preserveAspectRatio="xMidYMid slice"/></g></g><g class="card" style="transform:scale(0.3143)"><rect class="shadow" x="-35.0" y="-52.5" width="70" height="105" rx="5"/><g clip-path="url(#cpCard)"><image href="assets/img/m2.webp" x="-35.0" y="-52.5" width="70" height="105" preserveAspectRatio="xMidYMid slice"/></g></g><g class="badge" style="transform:translate(13px,-17px)"><circle r="5.5"/><text y="2.6">2</text></g></g><g class="chip wide" id="c-TC" style="transform:translate(290px,280px)" tabindex="0" role="button" aria-label="Moment: Tristan and Christian, 7:22:09 pm, Salt Lake City, UT" data-names="Tristan &amp; Christian" data-imgs="assets/img/m4.webp" data-times="7:22:09 pm" data-places="Salt Lake City, UT"><rect class="hit" x="-22" y="-26" width="44" height="52"/><g class="card" style="transform:scale(0.3143)"><rect class="shadow" x="-35.0" y="-52.5" width="70" height="105" rx="5"/><g clip-path="url(#cpCard)"><image href="assets/img/m4.webp" x="-35.0" y="-52.5" width="70" height="105" preserveAspectRatio="xMidYMid slice"/></g></g></g><g class="chip wide" id="c-TR" style="transform:translate(190px,281.5px)" tabindex="0" role="button" aria-label="Moment: Tristan and Ryan, 5:44:00 pm, San Francisco, CA" data-names="Tristan &amp; Ryan" data-imgs="assets/img/m13.webp" data-times="5:44:00 pm" data-places="San Francisco, CA"><rect class="hit" x="-22" y="-26" width="44" height="52"/><g class="card" style="transform:scale(0.3143)"><rect class="shadow" x="-35.0" y="-52.5" width="70" height="105" rx="5"/><g clip-path="url(#cpCard)"><image href="assets/img/m13.webp" x="-35.0" y="-52.5" width="70" height="105" preserveAspectRatio="xMidYMid slice"/></g></g></g><g class="chip" id="c-TI" style="transform:translate(342.5px,268.5px)" tabindex="0" role="button" aria-label="Moment: Tristan and Ria, 12:05:25 pm, Santa Clara, CA" data-names="Tristan &amp; Ria" data-imgs="assets/img/m12.webp" data-times="12:05:25 pm" data-places="Santa Clara, CA"><rect class="hit" x="-22" y="-26" width="44" height="52"/><g class="card" style="transform:scale(0.3143)"><rect class="shadow" x="-35.0" y="-52.5" width="70" height="105" rx="5"/><g clip-path="url(#cpCard)"><image href="assets/img/m12.webp" x="-35.0" y="-52.5" width="70" height="105" preserveAspectRatio="xMidYMid slice"/></g></g></g></g></g></svg></div>
+      <div class="peek" id="peek" aria-hidden="true">
+        <div class="row"></div>
+        <div class="who"></div>
+      </div>
+      <figure class="zoom" id="zoom">
+        <div class="moment"><img src="assets/img/m10.webp" alt="Tristan and Aaron's Moment in a park in San Francisco. The two of them laughing on top, a dog running up below. Both photos were taken at 7:39:04 pm."></div>
+        <figcaption>San Francisco · 7:39 pm</figcaption>
+      </figure>
+      <svg id="lead" aria-hidden="true"><path pathLength="1" d=""/><circle r="2.5" cx="0" cy="0"/></svg>
+    </div>
+  </div>
+</div>
+
+<section id="how">
+  <div class="wrap">
+    <h2 class="title">Taking a Moment</h2>
+
+    <div class="flow">
+      <div class="pair v1">
+        <div class="dev" role="img" aria-label="A friend's phone: Tristan is hosting a Moment nearby, with a Join button">
+          <div class="scr">
+            <div class="status"><span>9:41</span><span class="r"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg><svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="20" height="9" rx="2" fill="currentColor"/></svg></span></div>
+            <div class="island"></div>
+            <div class="p-topbar"><span class="p-wordmark">Moment</span></div>
+            <div class="p-page">
+              <div class="p-title" style="margin-top:12px">Who's with you?</div>
+              <div class="p-sh" style="margin-top:28px"><span class="p-over">Nearby</span><span class="p-scan"><i></i>Looking</span></div>
+              <div class="p-group">
+                <div class="p-row"><span class="p-av"><img src="assets/img/av-tristan-full.webp" alt=""></span><span class="lbl">Tristan<small>Hosting a Moment</small></span><span class="p-btn secondary pill">Join</span></div>
+                <div class="p-row short"><i class="p-ic i-link"></i><span class="lbl">Invite a friend</span><i class="p-ic i-chev chev"></i></div>
+              </div>
+            </div>
+            <div class="p-footer"><span class="p-btn primary"><i class="p-ic i-mark" style="width:24px;height:19px"></i>Start a Moment</span></div>
+            <nav class="p-tabbar"><span class="p-tab"><i class="p-ic i-feed"></i></span><span class="p-tab on"><i class="p-ic i-mark"></i></span><span class="p-tab"><span class="p-av s26 fr"></span></span></nav>
+            <div class="home"></div>
+          </div>
+        </div>
+      </div>
+      <p class="cap c1"><span class="n">1</span><span>Join or start a Moment</span></p>
+      <div class="duo v2" id="duo" role="group" aria-label="Tristan's phone and his friend's, held sideways, flash at the same instant, both at 9:40:46 pm.">
+        <div class="ld host" role="img" aria-label="Tristan's camera, with the shutter">
+          <div class="scr">
+            <div class="l-island"></div>
+            <div class="l-rail"><span class="l-btn"><i class="p-ic i-flip"></i></span><span class="l-chip"><span class="p-av fr"></span></span><span class="l-btn"><i class="p-ic i-close"></i></span></div>
+            <div class="l-vf up" style="background-image:url(assets/img/m7.webp)"><div class="l-zoom"><span>.5</span><span class="on">1×</span><span>2</span></div><div class="l-flash"></div></div>
+            <div class="l-deck"><span class="l-shutter"></span><span class="l-time">9:40:46 pm</span></div>
+            <div class="l-home"></div>
+          </div>
+        </div>
+        <div class="ld guest" role="img" aria-label="His friend's camera, no shutter">
+          <div class="scr">
+            <div class="l-island"></div>
+            <div class="l-rail"><span class="l-btn"><i class="p-ic i-flip"></i></span><span class="l-chip"><span class="p-av"><img src="assets/img/av-tristan-full.webp" alt=""></span></span><span class="l-btn"><i class="p-ic i-close"></i></span></div>
+            <div class="l-vf dn" style="background-image:url(assets/img/m7.webp)"><div class="l-zoom"><span>.5</span><span class="on">1×</span><span>2</span></div><div class="l-flash"></div></div>
+            <div class="l-deck"><span class="l-time">9:40:46 pm</span></div>
+            <div class="l-home"></div>
+          </div>
+        </div>
+        <span class="ghost up" aria-hidden="true" style="background-image:url(assets/img/m7.webp)"></span>
+        <span class="ghost dn" aria-hidden="true" style="background-image:url(assets/img/m7.webp)"></span>
+      </div>
+      <p class="cap c2"><span class="n">2</span><span>Capture</span></p>
+      <div class="mo v3" role="img" aria-label="The Moment: the photo of Tristan's friend on top, the photo of Tristan below, with a black strip underneath: Moment, Apr 4 · 9:40 pm · San Francisco, CA"><div class="mph"><span class="hf up" style="background-image:url(assets/img/m7.webp)"></span><span class="hf dn" style="background-image:url(assets/img/m7.webp)"></span></div><div class="xs"><span class="lg"><i class="gl"></i><span class="wm">Moment</span></span><span class="md">Apr 4 · 9:40 pm · San Francisco, CA</span></div></div>
+      <p class="cap c3"><span class="n">3</span><span>That's it</span></p>
+    </div>
+  </div>
+</section>
+
+<section id="friends">
+  <div class="wrap">
+    <h2>Friends</h2>
+    <p class="intro">Add a friend by taking a Moment with them.</p>
+    <div class="strip">
+      <figure><div class="moment"><img src="assets/img/m13.webp" alt="Tristan and Ryan's Moment at a music festival in San Francisco" loading="lazy"></div><figcaption class="meta">Tristan &amp; Ryan · San Francisco</figcaption></figure>
+      <figure><div class="moment"><img src="assets/img/m12.webp" alt="Tristan and Ria's Moment at a soccer game in Santa Clara" loading="lazy"></div><figcaption class="meta">Tristan &amp; Ria · Santa Clara</figcaption></figure>
+      <figure><div class="moment"><img src="assets/img/m1.webp" alt="Tristan and Finn's Moment with a snowboard in Salt Lake City" loading="lazy"></div><figcaption class="meta">Tristan &amp; Finn · Salt Lake City</figcaption></figure>
+      <figure><div class="moment"><img src="assets/img/m3.webp" alt="Finn and Kieran's Moment on a ski run in Alpine, Utah" loading="lazy"></div><figcaption class="meta">Finn &amp; Kieran · Alpine</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+
+<section id="faq">
+  <div class="wrap">
+    <h2>FAQ</h2>
+    <div class="faq">
+      <details><summary>How is Moment different from other social media?</summary><p>The only way to add someone is to take a Moment with them in person. And every post is two photos of the same moment, one from each friend's phone.</p></details>
+      <details><summary>Why can't I just add friends?</summary><p>You become friends by taking a Moment together. Next time you're with someone, take one.</p></details>
+      <details><summary>Can I take a Moment with someone I'm not friends with yet?</summary><p>Yes. Taking one is how you become friends.</p></details>
+      <details><summary>Who can see my Moments?</summary><p>The two of you, and each of your friends.</p></details>
+      <details><summary>Does my friend need Moment too?</summary><p>Yes, you both need it on your iPhones.</p></details>
+      <details><summary>Is there an Android version?</summary><p>It's coming soon.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="closer">
+  <div class="wrap">
+    <div class="cta"><!-- TODO: App Store URL --><a class="store" href="#"><small>Download on the</small><span>App Store</span></a></div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="Moment home"><span class="mark" aria-hidden="true"></span><span class="wm">Moment</span></a>
+    <div class="links"><a href="support.html">Support</a><a href="privacy.html">Privacy</a><a href="mailto:tristansaucedobusiness@gmail.com">Contact</a></div>
+    <p class="fine">&copy; 2026 Moment.</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  'use strict';
+  var root = document.documentElement;
+
+  /* Taking a Moment, step 2: the capture loop starts once it scrolls into view */
+  (function(){
+    var duo = document.getElementById('duo'), flow = duo && duo.closest('.flow');
+    if (!duo || !root.classList.contains('motion')) return;
+    /* FLIP, measured live: each captured frame is laid out on its half of the Moment (Last) and inverted onto its phone's viewfinder (First) */
+    var pairs = [['.ghost.up', '.host .l-vf', '.mo .hf.up'], ['.ghost.dn', '.guest .l-vf', '.mo .hf.dn']].map(function(p){
+      return p.map(function(sel){ return flow.querySelector(sel); });
+    });
+    function fit(){
+      var d = duo.getBoundingClientRect(), ox = d.left + duo.clientLeft, oy = d.top + duo.clientTop;
+      pairs.forEach(function(p){
+        var a = p[1].getBoundingClientRect(), b = p[2].getBoundingClientRect(), g = p[0].style;
+        if (!a.width || !b.width) return;
+        g.setProperty('--gx', (b.left - ox) + 'px');
+        g.setProperty('--gy', (b.top - oy) + 'px');
+        g.setProperty('--gw', b.width + 'px');
+        g.setProperty('--gh', b.height + 'px');
+        g.setProperty('--ix', (a.left - b.left) + 'px');
+        g.setProperty('--iy', (a.top - b.top) + 'px');
+        g.setProperty('--is', a.width / b.width);
+      });
+    }
+    fit();
+    if ('ResizeObserver' in window) { var ro = new ResizeObserver(fit); ro.observe(duo); ro.observe(flow); }
+    window.addEventListener('resize', fit);
+    window.addEventListener('load', fit);
+    if (!('IntersectionObserver' in window)) { flow.classList.add('fire'); return; }
+    var io = new IntersectionObserver(function(es){
+      if (es.some(function(e){ return e.isIntersecting; })) { io.disconnect(); flow.classList.add('fire'); }
+    }, { threshold: 0.4 });
+    io.observe(duo);
+  })();
+
+  window.addEventListener('error', function(){ root.classList.remove('anim'); });
+  /* ---------- graph ---------- */
+  var G = {"pos": {"T": [230, 215], "A": [370, 200], "K": [140, 105], "F": [110, 250], "C": [350, 345], "R": [150, 348], "I": [455, 322]}, "r": {"T": 34, "A": 34, "K": 27, "F": 27, "C": 27, "R": 27, "I": 27}, "phone": ["T", "A", "K", "F", "I"], "edges": [["T", "A", true, 3], ["F", "K", true, 1], ["T", "F", true, 2], ["T", "C", false, 1], ["T", "R", false, 1], ["T", "I", true, 1]], "card": [70, 105], "chipS": 0.3143};
+  var svg = document.getElementById('graph');
+  var stage = document.getElementById('stage');
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var phone = matchMedia('(max-width: 640px)').matches;
+
+  var VB = phone ? [78, 72, 416, 308] : [40, 50, 460, 345];
+  if (phone) svg.setAttribute('viewBox', VB.join(' '));
+
+  var running = false;
+
+  /* chip peek: hover or tap a chip to enlarge its Moment */
+  var peek = document.getElementById('peek');
+  var peekRow = peek.querySelector('.row');
+  var current = null;
+  function showPeek(chip){
+    if (running) return;
+    current = chip;
+    var imgs = chip.dataset.imgs.split('|'), n = imgs.length;
+    peekRow.innerHTML = '';
+    imgs.forEach(function(src){
+      var m = document.createElement('div'); m.className = 'moment';
+      var im = document.createElement('img'); im.alt = ''; im.src = src;
+      m.appendChild(im); peekRow.appendChild(m);
+    });
+    var place = chip.dataset.places.split('|')[0].replace(/, [A-Z]{2}$/, '');
+    peek.querySelector('.who').textContent = chip.dataset.names + ' · ' + (n > 1 ? n + ' Moments' : place);
+    var s = stage.getBoundingClientRect();
+    var one = phone ? 136 : 160, gap = phone ? 6 : 8;
+    if (n > 1) one = phone ? 108 : 132;
+    var w = Math.min(s.width - 8, n * one + (n - 1) * gap);
+    peek.style.width = w + 'px';
+    var c = chip.querySelector('.card').getBoundingClientRect();
+    var h = ((w - (n - 1) * gap) / n) * 1.5 + 34;
+    var cx = c.left + c.width / 2 - s.left, cy = c.top + c.height / 2 - s.top;
+    var left = Math.max(4, Math.min(s.width - w - 4, cx - w / 2));
+    var top = cy - h / 2;
+    var gb = svg.getBoundingClientRect();
+    top = Math.max(gb.top - s.top + 4, Math.min(gb.bottom - s.top - h + 30, top));
+    peek.style.left = left + 'px';
+    peek.style.top = top + 'px';
+    peek.style.transformOrigin = (cx - left) + 'px ' + (cy - top) + 'px';
+    peek.classList.add('on');
+  }
+  function hidePeek(){ current = null; peek.classList.remove('on'); }
+  svg.querySelectorAll('.chip').forEach(function(chip){
+    chip.addEventListener('pointerenter', function(e){ if (e.pointerType === 'mouse') showPeek(chip); });
+    chip.addEventListener('pointerleave', function(e){ if (e.pointerType === 'mouse') hidePeek(); });
+    chip.addEventListener('click', function(){ if (current === chip) hidePeek(); else showPeek(chip); });
+    chip.addEventListener('focus', function(){ showPeek(chip); });
+    chip.addEventListener('blur', hidePeek);
+    chip.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); current === chip ? hidePeek() : showPeek(chip); }
+      if (e.key === 'Escape') hidePeek();
+    });
+  });
+  document.addEventListener('pointerdown', function(e){ if (!e.target.closest('.chip')) hidePeek(); });
+  var lastW = innerWidth;
+  window.addEventListener('resize', function(){ if (innerWidth !== lastW) { lastW = innerWidth; hidePeek(); } });
+
+  /* the blown-up Moment sits just above the Tristan & Aaron chip (just below it on phones), with a short leader between */
+  var zoom = document.getElementById('zoom'), zImg = zoom.querySelector('.moment');
+  var gwrap = stage.querySelector('.gwrap');
+  var lead = document.getElementById('lead'), leadPath = lead.querySelector('path'), leadDot = lead.querySelector('circle');
+  var CHIP = [300, 207.5];
+  var Y_UP = 150;            /* card's photo ends here: clear of Tristan, Aaron and every chip */
+  var Y_DN = 304;            /* phone: card's photo starts here, below the Ria line, between Finn and Ria */
+  stage.classList.toggle('below', phone);
+  function setPx(el, prop, v){ if (Math.abs((parseFloat(el.style[prop]) || 0) - v) > 0.5) el.style[prop] = v + 'px'; }
+  function layout(){
+    var g = svg.getBoundingClientRect();
+    if (!g.width) return;
+    var k = g.width / VB[2];
+    var w = Math.round(phone ? Math.min(170, 190 * k) : Math.max(170, Math.min(220, 150 * k)));
+    setPx(zoom, 'width', w);
+    var mt = zImg.offsetTop, mh = zImg.offsetHeight, fh = zoom.offsetHeight;
+    if (!phone) { setPx(gwrap, 'marginTop', Math.max(0, Math.round(mt + mh + 8 - (Y_UP - VB[1]) * k))); setPx(gwrap, 'marginBottom', 0); }
+    else { setPx(gwrap, 'marginTop', 0); setPx(gwrap, 'marginBottom', Math.max(0, Math.round(fh - (VB[1] + VB[3] - Y_DN) * k + 12))); }
+    var s = stage.getBoundingClientRect();
+    g = svg.getBoundingClientRect();
+    function px(ux, uy){ return [g.left - s.left + (ux - VB[0]) * k, g.top - s.top + (uy - VB[1]) * k]; }
+    var cx = px(CHIP[0], 0)[0];
+    var left = Math.max(0, Math.min(s.width - w, cx - w / 2));
+    var a, end, top;
+    if (!phone) { a = px(CHIP[0], CHIP[1] - 19); end = px(0, Y_UP)[1]; top = end - (mt + mh); }
+    else { a = px(CHIP[0], CHIP[1] + 19); top = px(0, Y_DN)[1]; end = top + mt; }
+    zoom.style.left = left + 'px';
+    zoom.style.top = top + 'px';
+    leadPath.setAttribute('d', 'M' + a[0] + ' ' + a[1] + 'V' + end);
+    leadDot.setAttribute('cx', a[0]); leadDot.setAttribute('cy', a[1]);
+  }
+  layout();
+  if ('ResizeObserver' in window) new ResizeObserver(layout).observe(svg); else window.addEventListener('resize', layout);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+  window.addEventListener('load', layout);
+
+  if (reduce) return;
+  if (!svg.animate) { root.classList.remove('anim'); return; }
+
+  /* ---------- the "Meet -> Moment" timeline ---------- */
+  var SPEED = 1.1;            /* 8400ms authored, ~7.6s played */
+  var TOTAL = 8400;
+  var anims = [];
+  var $ = function(s){ return svg.querySelector(s); };
+  var P = G.pos, R = G.r;
+  function tr(x, y, s){ return 'translate(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px) scale(' + (s == null ? 1 : s) + ')'; }
+  function sc(s){ return 'scale(' + s + ')'; }
+  var EASE = 'cubic-bezier(.45,0,.25,1)', OUT = 'cubic-bezier(.2,.8,.3,1)', BACK = 'cubic-bezier(.3,1.4,.5,1)';
+
+  /* track(el, [[ms, {props}, easingToNext], ...]) -> one paused WAAPI animation across the whole timeline */
+  function track(el, pts){
+    if (!el) return;
+    pts.forEach(function(p){ p[0] = Math.min(p[0], TOTAL); });
+    var kf = [];
+    if (pts[0][0] > 0) kf.push(Object.assign({ offset: 0 }, pts[0][1]));
+    pts.forEach(function(p){ kf.push(Object.assign({ offset: p[0] / TOTAL, easing: p[2] || 'linear' }, p[1])); });
+    if (pts[pts.length - 1][0] < TOTAL) kf.push(Object.assign({ offset: 1 }, pts[pts.length - 1][1]));
+    var a = el.animate(kf, { duration: TOTAL / SPEED, fill: 'both' });
+    a.pause();
+    anims.push(a);
+  }
+
+  var D = P.T, S = P.A, L = P.F, KP = P.K;
+  var M = [(D[0] + S[0]) / 2, (D[1] + S[1]) / 2];
+  var len = Math.hypot(S[0] - D[0], S[1] - D[1]);
+  var u = [(S[0] - D[0]) / len, (S[1] - D[1]) / len];
+  var far = phone ? 110 : 100, touch = (R.T + R.A) / 2 + 0.5;
+  var dStart = [M[0] - u[0] * far, M[1] - u[1] * far], sStart = [M[0] + u[0] * far, M[1] + u[1] * far];
+  var dTouch = [M[0] - u[0] * touch, M[1] - u[1] * touch], sTouch = [M[0] + u[0] * touch, M[1] + u[1] * touch];
+
+  /* camera: start zoomed in on the pair, pair sitting low so the card has room above */
+  var Z = phone ? 1.25 : 1.4;
+  var tgt = [VB[0] + VB[2] / 2, VB[1] + VB[3] * (phone ? 0.73 : 0.70)];
+  var camStart = tr(tgt[0] - Z * M[0], tgt[1] - Z * M[1], Z);
+  track($('#cam'), [[0, { transform: camStart }], [3800, { transform: camStart }, 'cubic-bezier(.5,0,.2,1)'], [4900, { transform: tr(0, 0, 1) }]]);
+
+  /* Tristan and Aaron, named from the first frame */
+  track($('#n-T'), [[450, { transform: tr(dStart[0], dStart[1]) }, EASE], [1500, { transform: tr(dTouch[0], dTouch[1]) }], [3450, { transform: tr(dTouch[0], dTouch[1]) }, EASE], [3950, { transform: tr(D[0], D[1]) }]]);
+  track($('#n-A'), [[450, { transform: tr(sStart[0], sStart[1]) }, EASE], [1500, { transform: tr(sTouch[0], sTouch[1]) }], [3450, { transform: tr(sTouch[0], sTouch[1]) }, EASE], [3950, { transform: tr(S[0], S[1]) }]]);
+  ['T', 'A'].forEach(function(k){
+    track($('#n-' + k + ' .pop'), [[100, { opacity: 0, transform: sc(0.85) }, OUT], [550, { opacity: 1, transform: sc(1) }]]);
+  });
+
+  /* after the pull-back, Kieran drifts in and touches Finn: a friend of a friend */
+  var KIN = 5300, KTOUCH = 6100, KOFF = 6400;
+  var v = [KP[0] - L[0], KP[1] - L[1]], vl = Math.hypot(v[0], v[1]); v = [v[0] / vl, v[1] / vl];
+  var kTouch = [L[0] + v[0] * (R.F + R.K + 1), L[1] + v[1] * (R.F + R.K + 1)];
+  var kStart = [KP[0] + v[0] * 110, KP[1] + v[1] * 110];
+  track($('#n-K'), [[KIN, { transform: tr(kStart[0], kStart[1]) }, 'cubic-bezier(.35,0,.3,1)'], [KTOUCH, { transform: tr(kTouch[0], kTouch[1]) }], [KOFF, { transform: tr(kTouch[0], kTouch[1]) }, OUT], [KOFF + 200, { transform: tr(KP[0], KP[1]) }]]);
+  track($('#n-K .pop'), [[KIN, { opacity: 0 }], [KIN + 350, { opacity: 1 }]]);
+
+  /* together: a fine ink ring on each face while they're connected */
+  track($('#n-A .ring'), [[1400, { opacity: 0 }], [1600, { opacity: 1 }], [3500, { opacity: 1 }], [4000, { opacity: 0 }]]);
+  track($('#n-T .ring'), [[1400, { opacity: 0 }], [1600, { opacity: 1 }], [3500, { opacity: 1 }], [4000, { opacity: 0 }]]);
+  ['F', 'K'].forEach(function(k){
+    track($('#n-' + k + ' .ring'), [[KTOUCH - 100, { opacity: 0 }], [KTOUCH + 50, { opacity: 1 }], [KOFF + 450, { opacity: 1 }], [KOFF + 850, { opacity: 0 }]]);
+  });
+
+  /* capture: one tap, both faces flash on the same frame */
+  var SNAP = 1750, SNAP2 = KTOUCH + 120;
+  ['T', 'A'].forEach(function(k){
+    track($('#n-' + k + ' .flash'), [[SNAP - 1, { opacity: 0 }], [SNAP, { opacity: 0.85 }], [SNAP + 120, { opacity: 0.85 }, OUT], [SNAP + 520, { opacity: 0 }]]);
+  });
+  ['F', 'K'].forEach(function(k){
+    track($('#n-' + k + ' .flash'), [[SNAP2 - 1, { opacity: 0 }], [SNAP2, { opacity: 0.95 }], [SNAP2 + 100, { opacity: 0.95 }, OUT], [SNAP2 + 450, { opacity: 0 }]]);
+  });
+
+  function drawEdge(id, t0, t1, fadeAt, backAt){
+    svg.querySelectorAll('#e-' + id + ' .ln:not(.live)').forEach(function(p){
+      track(p, [[t0, { strokeDashoffset: 1 }, OUT], [t1, { strokeDashoffset: 0 }]]);
+    });
+    svg.querySelectorAll('#e-' + id + ' .ln.live').forEach(function(p){
+      var pts = [[t0, { strokeDashoffset: 1, opacity: 1 }, OUT], [t1, { strokeDashoffset: 0, opacity: 1 }], [fadeAt, { strokeDashoffset: 0, opacity: 1 }], [fadeAt + 450, { strokeDashoffset: 0, opacity: 0 }]];
+      if (backAt) pts.push([backAt, { strokeDashoffset: 0, opacity: 0 }, OUT], [backAt + 350, { strokeDashoffset: 0, opacity: 1 }]);
+      track(p, pts);
+    });
+  }
+  var FIN = 7250;             /* the closing beat on Tristan & Aaron */
+  drawEdge('TA', 2250, 2650, 3400, FIN);
+  drawEdge('FK', KOFF, KOFF + 350, KOFF + 550);
+
+  /* the Moment blooms from the line, then becomes its chip */
+  var chipS = G.chipS, lift = -110;
+  track($('#c-TA .card'), [
+    [2400, { opacity: 0, transform: 'translate(0px,' + lift + 'px) scale(.12)' }, 'cubic-bezier(.2,.9,.25,1.06)'],
+    [2900, { opacity: 1, transform: 'translate(0px,' + lift + 'px) scale(1)' }],
+    [3450, { opacity: 1, transform: 'translate(0px,' + lift + 'px) scale(1)' }, EASE],
+    [3950, { opacity: 1, transform: 'translate(0px,0px) scale(' + chipS + ')' }]
+  ]);
+  track($('#c-TA .cap'), [[2750, { opacity: 0 }], [2950, { opacity: 1 }], [3350, { opacity: 1 }], [3500, { opacity: 0 }]]);
+  track($('#c-FK .card'), [[KOFF + 250, { opacity: 0, transform: sc(0.04) }, BACK], [KOFF + 650, { opacity: 1, transform: sc(chipS) }]]);
+
+  /* stacks: the cards behind the top one fan out, then the count appears */
+  function stackIn(id, t0){
+    svg.querySelectorAll('#c-' + id + ' .back').forEach(function(b, i){
+      var end = b.style.transform, start = end.replace(/translate\([^)]*\) rotate\([^)]*\)/, 'translate(0px, 0px) rotate(0deg)');
+      track(b, [[t0 + i * 70, { opacity: 0, transform: start }, OUT], [t0 + 320 + i * 70, { opacity: 1, transform: end }]]);
+    });
+    track($('#c-' + id + ' .badge'), [[t0 + 300, { opacity: 0 }], [t0 + 500, { opacity: 1 }]]);
+  }
+  stackIn('TA', 3950);
+
+  /* the pull-back reveals the rest of Tristan's graph, Finn first */
+  var others = Object.keys(P).filter(function(k){ return 'TAK'.indexOf(k) < 0 && (!phone || G.phone.indexOf(k) >= 0); });
+  others.forEach(function(k, i){
+    var t = 4150 + i * 110;
+    track($('#n-' + k + ' .pop'), [[t, { opacity: 0, transform: sc(0.6) }, BACK], [t + 450, { opacity: 1, transform: sc(1) }]]);
+  });
+  G.edges.forEach(function(e, i){
+    var id = e[0] + e[1];
+    if (id === 'TA' || id === 'FK' || (phone && !e[2])) return;
+    var t = 4450 + i * 100;
+    track($('#e-' + id), [[t, { opacity: 0 }], [t + 450, { opacity: 1 }]]);
+    track($('#c-' + id + ' .card'), [[t + 150, { opacity: 0, transform: sc(chipS * 0.4) }, BACK], [t + 550, { opacity: 1, transform: sc(chipS) }]]);
+    stackIn(id, t + 450);
+  });
+  svg.querySelectorAll('.node').forEach(function(n){
+    if (n.id === 'n-T' || n.id === 'n-A') return;
+    var pts = n.id === 'n-K' ? [[KOFF + 250, { opacity: 0 }], [KOFF + 650, { opacity: 1 }]] : [[4600, { opacity: 0 }], [5100, { opacity: 1 }]];
+    track(n.querySelector('.name'), pts);
+  });
+
+  /* once the graph settles, zoom into Tristan & Aaron: their line darkens, a leader runs out, the Moment opens up large */
+  track($('#c-TA .hl'), [[FIN, { opacity: 0 }], [FIN + 300, { opacity: 1 }]]);
+  track(leadDot, [[FIN + 50, { opacity: 0 }], [FIN + 200, { opacity: 1 }]]);
+  track(leadPath, [[FIN + 100, { strokeDashoffset: 1 }, EASE], [FIN + 600, { strokeDashoffset: 0 }]]);
+  var zFrom = phone ? 'translate(0px,-10px) scale(.92)' : 'translate(0px,10px) scale(.92)';
+  track(zoom, [[FIN + 450, { opacity: 0, transform: zFrom }, OUT], [FIN + 1050, { opacity: 1, transform: 'translate(0px,0px) scale(1)' }]]);
+
+  root.classList.remove('anim');
+
+  var started = false, done = false;
+  function finish(){ done = true; running = false; anims.forEach(function(a){ a.cancel(); }); }
+  function play(){
+    if (started) return;
+    started = true; running = true;
+    anims.forEach(function(a){ a.play(); });
+    Promise.all(anims.map(function(a){ return a.finished; })).then(finish, function(){});
+  }
+  document.addEventListener('visibilitychange', function(){
+    if (!started || done) return;
+    anims.forEach(function(a){ document.hidden ? a.pause() : a.play(); });
+  });
+  function arm(){
+    if (!('IntersectionObserver' in window)) { play(); return; }
+    var io = new IntersectionObserver(function(es){
+      if (es.some(function(e){ return e.isIntersecting; })) { io.disconnect(); play(); }
+    }, { threshold: 0.35 });
+    io.observe(stage);
+  }
+  if (document.readyState === 'complete') arm(); else window.addEventListener('load', arm);
+})();
+</script>
 </body>
 </html>
