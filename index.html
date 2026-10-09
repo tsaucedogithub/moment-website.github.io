@@ -234,31 +234,57 @@ p{margin:0}
 @media (min-width:900px){#how .duo,#how .mo{--s:.40}#how .duo{--g:24px}#how .pair{--s:.397}}
 @media (min-width:1100px){#how .duo,#how .mo{--s:.46}#how .pair{--s:.453}}
 @media (min-width:1280px){#how .duo,#how .mo{--s:.54}#how .pair{--s:.526}}
-/* one tap, one clock (6.4s): shutter, both phones flash, each photo comes up out of the flash on its own screen, lifts, glides into its half
-   of the Moment and is swapped for it on the landing frame; then the strip slides out from under. Starts when scrolled into view */
-.motion #how .flow:not(.fire) .mo .hf,.motion #how .flow:not(.fire) .mo .xs{opacity:0}
-.motion #how .fire .l-flash{animation:how-flash 6.4s linear infinite}
-.motion #how .fire .host .l-shutter::after{animation:how-press 6.4s infinite}
-.motion #how .fire .ghost{animation:how-fly 6.4s linear infinite}
-.motion #how .fire .ghost::after{animation:how-develop 6.4s linear infinite}
-.motion #how .fire .mo .hf{animation:how-land 6.4s linear infinite}
-.motion #how .fire .mo .xs{animation:how-strip 6.4s linear infinite}
-@keyframes how-flash{0%,39.9%{opacity:0}40%{opacity:1;animation-timing-function:cubic-bezier(.3,0,.6,1)}52%,100%{opacity:0}}
-@keyframes how-press{0%,35%{transform:scale(1)}38.5%{transform:scale(.86)}42%,100%{transform:scale(1)}}
-@keyframes how-develop{0%,40%{opacity:1;animation-timing-function:cubic-bezier(.3,0,.6,1)}47%,100%{opacity:0}}
-@keyframes how-fly{
-  0%,39.9%{opacity:0;transform:translate(var(--ix,0px),var(--iy,0px)) scale(var(--is,1));box-shadow:none}
-  40%{opacity:1;box-shadow:0 0 0 rgba(0,0,0,0)}
-  45%{box-shadow:0 0 0 rgba(0,0,0,0);animation-timing-function:ease-out}
-  49%{transform:translate(var(--ix,0px),var(--iy,0px)) scale(var(--is,1));box-shadow:0 18px 40px rgba(20,18,14,.28);animation-timing-function:cubic-bezier(.45,0,.2,1)}
-  60%{box-shadow:0 18px 40px rgba(20,18,14,.28)}
-  66%{opacity:1;transform:none;box-shadow:0 0 0 rgba(0,0,0,0)}
-  67%{opacity:1;transform:none}
-  67.1%,100%{opacity:0;transform:none;box-shadow:none}}
-@keyframes how-land{0%,65.9%{opacity:0}66%,91%{opacity:1}98%,100%{opacity:0}}
-@keyframes how-strip{0%,67%{opacity:0;transform:translateY(-100%);animation-timing-function:cubic-bezier(.2,.7,.2,1)}75%,91%{opacity:1;transform:none}98%,100%{opacity:0;transform:none}}
+/* turn by turn (6.8s): Tristan's shutter, his flash; his photo lifts and glides into the top half while his friend's shutter comes up
+   with its ring draining; a second later theirs fires and glides into the bottom half; then the strip slides out from under. Starts when scrolled into view */
+#how .guest .l-shutter{box-shadow:inset 0 0 0 3px rgba(255,255,255,.3)}
+#how .l-ring{position:absolute;inset:0;transform:rotate(-90deg)}
+#how .l-ring circle{fill:none;stroke:#fff;stroke-width:3;stroke-dasharray:1;stroke-dashoffset:0}
+.motion #how .flow:not(.fire) .mo .hf,.motion #how .flow:not(.fire) .mo .xs,.motion #how .flow:not(.fire) .guest .l-shutter{opacity:0}
+.motion #how .fire .host .l-flash{animation:how-flash-a 6.8s linear infinite}
+.motion #how .fire .guest .l-flash{animation:how-flash-b 6.8s linear infinite}
+.motion #how .fire .host .l-shutter::after{animation:how-press-a 6.8s infinite}
+.motion #how .fire .guest .l-shutter{animation:how-turn 6.8s linear infinite}
+.motion #how .fire .guest .l-shutter::after{animation:how-press-b 6.8s infinite}
+.motion #how .fire .l-ring circle{animation:how-drain 6.8s linear infinite}
+.motion #how .fire .ghost.up{animation:how-fly-a 6.8s linear infinite}
+.motion #how .fire .ghost.dn{animation:how-fly-b 6.8s linear infinite}
+.motion #how .fire .ghost.up::after{animation:how-develop-a 6.8s linear infinite}
+.motion #how .fire .ghost.dn::after{animation:how-develop-b 6.8s linear infinite}
+.motion #how .fire .mo .hf.up{animation:how-land-a 6.8s linear infinite}
+.motion #how .fire .mo .hf.dn{animation:how-land-b 6.8s linear infinite}
+.motion #how .fire .mo .xs{animation:how-strip 6.8s linear infinite}
+@keyframes how-flash-a{0%,8%{opacity:0}8.1%{opacity:1;animation-timing-function:cubic-bezier(.3,0,.6,1)}19.4%,100%{opacity:0}}
+@keyframes how-flash-b{0%,22.7%{opacity:0}22.8%{opacity:1;animation-timing-function:cubic-bezier(.3,0,.6,1)}34.1%,100%{opacity:0}}
+@keyframes how-press-a{0%,3.7%{transform:scale(1)}7.4%{transform:scale(.86)}10.9%,100%{transform:scale(1)}}
+@keyframes how-press-b{0%,18.4%{transform:scale(1)}22.1%{transform:scale(.86)}25.6%,100%{transform:scale(1)}}
+@keyframes how-turn{0%,9.6%{opacity:0;transform:scale(.8)}12.5%{opacity:1;transform:none}27%{opacity:1;transform:none}32%,100%{opacity:0;transform:none}}
+@keyframes how-drain{0%,12.5%{stroke-dashoffset:0}22.8%,100%{stroke-dashoffset:.6}}
+@keyframes how-develop-a{0%,8.1%{opacity:1;animation-timing-function:cubic-bezier(.3,0,.6,1)}14.7%,100%{opacity:0}}
+@keyframes how-develop-b{0%,22.8%{opacity:1;animation-timing-function:cubic-bezier(.3,0,.6,1)}29.4%,100%{opacity:0}}
+@keyframes how-fly-a{
+  0%,8%{opacity:0;transform:translate(var(--ix,0px),var(--iy,0px)) scale(var(--is,1));box-shadow:none}
+  8.1%{opacity:1;box-shadow:0 0 0 rgba(0,0,0,0)}
+  12%{box-shadow:0 0 0 rgba(0,0,0,0);animation-timing-function:ease-out}
+  16.6%{transform:translate(var(--ix,0px),var(--iy,0px)) scale(var(--is,1));box-shadow:0 18px 40px rgba(20,18,14,.28);animation-timing-function:cubic-bezier(.45,0,.2,1)}
+  27%{box-shadow:0 18px 40px rgba(20,18,14,.28)}
+  32.6%{opacity:1;transform:none;box-shadow:0 0 0 rgba(0,0,0,0)}
+  33.5%{opacity:1;transform:none}
+  33.6%,100%{opacity:0;transform:none;box-shadow:none}}
+@keyframes how-fly-b{
+  0%,22.7%{opacity:0;transform:translate(var(--ix,0px),var(--iy,0px)) scale(var(--is,1));box-shadow:none}
+  22.8%{opacity:1;box-shadow:0 0 0 rgba(0,0,0,0)}
+  26.7%{box-shadow:0 0 0 rgba(0,0,0,0);animation-timing-function:ease-out}
+  31.3%{transform:translate(var(--ix,0px),var(--iy,0px)) scale(var(--is,1));box-shadow:0 18px 40px rgba(20,18,14,.28);animation-timing-function:cubic-bezier(.45,0,.2,1)}
+  41.7%{box-shadow:0 18px 40px rgba(20,18,14,.28)}
+  47.4%{opacity:1;transform:none;box-shadow:0 0 0 rgba(0,0,0,0)}
+  48.3%{opacity:1;transform:none}
+  48.4%,100%{opacity:0;transform:none;box-shadow:none}}
+@keyframes how-land-a{0%,32.5%{opacity:0}32.6%,73.5%{opacity:1}80.1%,100%{opacity:0}}
+@keyframes how-land-b{0%,47.3%{opacity:0}47.4%,73.5%{opacity:1}80.1%,100%{opacity:0}}
+@keyframes how-strip{0%,47.6%{opacity:0;transform:translateY(-100%);animation-timing-function:cubic-bezier(.2,.7,.2,1)}55%,73.5%{opacity:1;transform:none}80.1%,100%{opacity:0;transform:none}}
 @media (max-width:640px){.motion #how .ghost{display:none}.motion #how .flow .mo .hf,.motion #how .flow .mo .xs{opacity:1;transform:none;animation:none}}
-html:not(.motion) #how .l-flash{opacity:.45}
+html:not(.motion) #how .host .l-flash{opacity:.45}
+html:not(.motion) #how .guest .l-shutter{display:none}
 html:not(.motion) #how .host .l-shutter::after{transform:scale(.86)}
 
 
@@ -352,7 +378,7 @@ html:not(.motion) #how .host .l-shutter::after{transform:scale(.86)}
         </div>
       </div>
       <p class="cap c1"><span class="n">1</span><span>Join or start a Moment</span></p>
-      <div class="duo v2" id="duo" role="group" aria-label="Tristan's phone and his friend's, held sideways, flash at the same instant, both at 9:40:46 pm.">
+      <div class="duo v2" id="duo" role="group" aria-label="Tristan's phone and his friend's, held sideways. Tristan takes his photo at 9:40:46 pm, then his friend takes theirs a second later.">
         <div class="ld host" role="img" aria-label="Tristan's camera, with the shutter">
           <div class="scr">
             <div class="l-island"></div>
@@ -362,12 +388,12 @@ html:not(.motion) #how .host .l-shutter::after{transform:scale(.86)}
             <div class="l-home"></div>
           </div>
         </div>
-        <div class="ld guest" role="img" aria-label="His friend's camera, no shutter">
+        <div class="ld guest" role="img" aria-label="His friend's camera, their turn next">
           <div class="scr">
             <div class="l-island"></div>
             <div class="l-rail"><span class="l-btn"><i class="p-ic i-flip"></i></span><span class="l-chip"><span class="p-av"><img src="assets/img/av-tristan-full.webp" alt=""></span></span><span class="l-btn"><i class="p-ic i-close"></i></span></div>
             <div class="l-vf dn" style="background-image:url(assets/img/m7.webp)"><div class="l-zoom"><span>.5</span><span class="on">1×</span><span>2</span></div><div class="l-flash"></div></div>
-            <div class="l-deck"><span class="l-time">9:40:46 pm</span></div>
+            <div class="l-deck"><span class="l-shutter"><svg class="l-ring" viewBox="0 0 78 78"><circle cx="39" cy="39" r="37.5" pathLength="1"/></svg></span><span class="l-time">9:40:47 pm</span></div>
             <div class="l-home"></div>
           </div>
         </div>
@@ -622,13 +648,13 @@ html:not(.motion) #how .host .l-shutter::after{transform:scale(.86)}
     track($('#n-' + k + ' .ring'), [[KTOUCH - 100, { opacity: 0 }], [KTOUCH + 50, { opacity: 1 }], [KOFF + 450, { opacity: 1 }], [KOFF + 850, { opacity: 0 }]]);
   });
 
-  /* capture: one tap, both faces flash on the same frame */
+  /* capture: one face flashes, then the other a beat later */
   var SNAP = 1750, SNAP2 = KTOUCH + 120;
-  ['T', 'A'].forEach(function(k){
-    track($('#n-' + k + ' .flash'), [[SNAP - 1, { opacity: 0 }], [SNAP, { opacity: 0.85 }], [SNAP + 120, { opacity: 0.85 }, OUT], [SNAP + 520, { opacity: 0 }]]);
+  [['T', SNAP], ['A', SNAP + 350]].forEach(function(f){
+    track($('#n-' + f[0] + ' .flash'), [[f[1] - 1, { opacity: 0 }], [f[1], { opacity: 0.85 }], [f[1] + 120, { opacity: 0.85 }, OUT], [f[1] + 520, { opacity: 0 }]]);
   });
-  ['F', 'K'].forEach(function(k){
-    track($('#n-' + k + ' .flash'), [[SNAP2 - 1, { opacity: 0 }], [SNAP2, { opacity: 0.95 }], [SNAP2 + 100, { opacity: 0.95 }, OUT], [SNAP2 + 450, { opacity: 0 }]]);
+  [['F', SNAP2 - 100], ['K', SNAP2 + 130]].forEach(function(f){
+    track($('#n-' + f[0] + ' .flash'), [[f[1] - 1, { opacity: 0 }], [f[1], { opacity: 0.95 }], [f[1] + 100, { opacity: 0.95 }, OUT], [f[1] + 450, { opacity: 0 }]]);
   });
 
   function drawEdge(id, t0, t1, fadeAt, backAt){
