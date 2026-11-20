@@ -1,4 +1,4 @@
-/* photosmomentapp.com: shared tokens, base type, header and footer. Page-specific CSS lives inline in each page.
+/* momentforfriends.com: shared tokens, base type, header and footer. Page-specific CSS lives inline in each page.
    Light and dark follow prefers-color-scheme. */
 
 @font-face{font-family:"Satoshi";src:url("assets/fonts/Satoshi-Regular.woff2") format("woff2");font-weight:400;font-display:swap}
